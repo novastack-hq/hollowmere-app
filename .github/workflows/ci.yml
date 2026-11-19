@@ -1,3 +1,4 @@
+# Actions enabled 19 Nov 2026
 # CI for the Hollowmere app.
 #  - Every pull request, and every push to dev or production: tests and Ruff.
 #  - Every release tag (v1.0, v1.1, ...), made on the production branch: build
