@@ -25,7 +25,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Every running box can say which release it is. CI builds the image from the
 # tagged commit on the production branch.
-APP_VERSION = "1.0"
+APP_VERSION = "1.0.1"
 
 app = Flask(__name__)
 # Behind a tunnel or Cloud Run, the visitor's address arrives in X-Forwarded-*
@@ -34,6 +34,10 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Settings live outside the image: Compose (or Cloud Run) passes them in.
 FEST_NAME = os.environ.get("FEST_NAME", "Hollowmere Festival")
+# Release 1.0.1 (lab FEST-46): make /lineup slow on purpose, to test a latency
+# alert. SLOW_MS=800 waits 0.8 seconds before every /lineup answer; 0 (the
+# default) changes nothing. A setting, so ops/compose.yaml decides, not the image.
+SLOW_MS = int(os.environ.get("SLOW_MS", "0"))
 LINEUP = json.loads(Path(__file__).with_name("lineup.json").read_text(encoding="utf-8"))
 
 # The ticketing system knows these two tickets by number (the made-up story's
@@ -206,6 +210,8 @@ def join():
 
 @app.get("/lineup")
 def lineup():
+    if SLOW_MS > 0:  # the headliner reveal: everyone asks at once
+        time.sleep(SLOW_MS / 1000)
     g.ticket, g.tier = who_is_asking()
     if wants_page():
         if not g.ticket:
